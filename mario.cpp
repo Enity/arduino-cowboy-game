@@ -88,6 +88,8 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
+#include "Arduino.h"
+
 //Mario main theme melody
 int melody[] = {
   NOTE_E7, NOTE_E7, 0, NOTE_E7,
