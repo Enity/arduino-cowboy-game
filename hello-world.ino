@@ -49,6 +49,18 @@ class LedSerivce {
       digitalWrite(ledPins[playerIndex], HIGH);
     }
 
+    void onForAll() {
+      for (int i = 0; i < PLAYERS; i ++) {
+        digitalWrite(ledPins[i], HIGH);
+      } 
+    }
+
+    void offForAll() {
+      for (int i = 0; i < PLAYERS; i ++) {
+        digitalWrite(ledPins[i], LOW);
+      } 
+    }
+
     void offForPlayer(int playerIndex) {
       digitalWrite(ledPins[playerIndex], LOW);
     }
@@ -64,6 +76,7 @@ class ControlService {
   public:
     bool stateMap[PLAYERS] = {false, false};
     bool someIsPressed = false;
+    bool bothIsPressed = false;
 
     void setup() {
       for (int i = 0; i < PLAYERS; i ++) {
@@ -78,14 +91,18 @@ class ControlService {
   private:
     void setStates() {
       bool isPressed = false;
+      int pressedCount = 0;
+
       for (int player = 0; player < PLAYERS; player++) {
         if (!digitalRead(buttonPins[player])) {
+          pressedCount++;
           isPressed = true;
           stateMap[player] = true;
         } else {
           stateMap[player] = false;
         }
       }
+      bothIsPressed = pressedCount == PLAYERS;
       someIsPressed = isPressed;
     }
 };
@@ -160,27 +177,39 @@ void loop() {
   sound.playStart();
 
   for (int player = 0; ; player = (player + 1) % PLAYERS) {
-    control.poll();
-    if (control.someIsPressed) {
-      for (int i = 0; i < PLAYERS; i ++) {
-        if (control.stateMap[i]) {
-          sound.playWin();
-          led.blinkForPlayer(i, 800);
-          score.add(i);
-          score.print();
-        }
-      }
+    // draw checks
+    for (int i = 0; i < 4000; i++) {
+      control.poll();
+    }
 
-      // check totally win
-      int totalWinner = score.getWinner();
-      if (totalWinner != -1) {
-        led.onForPlayer(totalWinner);
-        sound.playMario();
-        led.offForPlayer(totalWinner);
-        score.reset();
-      }
+    if (!control.someIsPressed) continue;
 
+    // draw
+    if (control.bothIsPressed) {
+      led.onForAll();
+      delay(800);
+      led.offForAll();
       break;
     }
+  
+    for (int i = 0; i < PLAYERS; i ++) {
+      if (control.stateMap[i]) {
+        sound.playWin();
+        led.blinkForPlayer(i, 800);
+        score.add(i);
+        score.print();
+      }
+    }
+
+    // check totally win
+    int totalWinner = score.getWinner();
+    if (totalWinner != -1) {
+      led.onForPlayer(totalWinner);
+      sound.playMario();
+      led.offForPlayer(totalWinner);
+      score.reset();
+    }
+
+    break;
   }
 }
